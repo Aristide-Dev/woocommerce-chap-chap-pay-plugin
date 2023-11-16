@@ -45,13 +45,6 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
     public $notify_url;
 
     /**
-     * paycard_jump_to_paycard.
-     *
-     * @var boolean
-     */
-    public $paycard_jump_to_paycard;
-
-    /**
      * Enable for virtual products.
      *
      * @var bool
@@ -75,7 +68,6 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
         $this->description = $this->get_option('description');
         $this->instructions = $this->get_option('instructions');
         $this->enable_for_virtual = $this->get_option('enable_for_virtual', 'yes') === 'yes';
-        $this->paycard_jump_to_paycard = $this->get_option('paycard_jump_to_paycard');
         $this->api_login = $this->get_option('api_login');
 
         // Actions.
@@ -122,12 +114,6 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
                 'label' => __('Enable Chap Chap Pay', 'chap_chap_pay'),
                 'type' => 'checkbox',
                 'description' => __('Enable or Disable chap chap pay payement methode', 'chap_chap_pay'),
-                'default' => 'no',
-            ),
-            'paycard_jump_to_paycard' => array(
-                'title' => __('Directement sur le paiement par Chap Chap Pay', 'chap_chap_pay'),
-                'label' => __('Allez directement sur le paiement par Chap Chap Pay.', 'chap_chap_pay'),
-                'type' => 'checkbox',
                 'default' => 'no',
             ),
             'title' => array(
@@ -232,7 +218,6 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
             'paycard-amount' => $customer_order->order_total,
             'paycard-description' => 'Paiement ' . get_bloginfo('name') . ' - Commande : ' . $customer_order->get_order_number(),
             'paycard-callback-url' => $this->notify_url,
-            'paycard-jump-to-paycard' => $this->paycard_jump_to_paycard == 'yes' ? 'on' : 'off',
         );
 
         $response = wp_remote_request($paycard_epay_url, array(
@@ -326,7 +311,7 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
     public function check_response()
     {
         global $woocommerce;
-
+        var_dump($_REQUEST); die();
         $redirect_url = wc_get_checkout_url();
 
         if (empty($_REQUEST['transactionReference']) || empty($_REQUEST['montant']) || empty($_REQUEST['c'])) {
@@ -337,6 +322,7 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
             $transactionAmount = $_REQUEST['montant'];
             $eCommerceCode = $_REQUEST['c'];
             $paymentMethod = $_REQUEST['paycardPaymentMethod'];
+            $paymentStatus = $_REQUEST['status'] ?? 'success';
 
             $order = wc_get_order($order_id);
 
@@ -356,6 +342,7 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
                     // Ajouter des informations supplémentaires à la commande
                     update_post_meta($order_id, 'Chap Chap Pay Transaction Reference', $transactionReference);
                     update_post_meta($order_id, 'Chap Chap Pay Payment Method', $paymentMethod);
+                    update_post_meta($order_id, 'Chap Chap Pay Payment Status', $paymentStatus);
 
                     $order->payment_complete($transactionReference);
                     $order->add_order_note(__('Payé avec Chap chap Pay via ' . $paymentMethod . 'Ref : ' . $transactionReference . ', montant : ' . $transactionAmount . '.', 'woocommerce'));
@@ -388,7 +375,8 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
             // Récupérer des informations supplémentaires si vous en avez
             $transaction_reference = get_post_meta($order_id, 'Chap Chap Pay Transaction Reference', true);
             $payment_method = get_post_meta($order_id, 'Chap Chap Pay Payment Method', true);
-            $status = "error";
+            // $status = get_post_meta($order_id, 'Chap Chap Pay Payment Status', true);
+            $status = "success";
             // $payment_method = "mtn_momos";
 
             echo '<div class="custom-ccp-thankyou-content">'; // Ouvrir la balise div
