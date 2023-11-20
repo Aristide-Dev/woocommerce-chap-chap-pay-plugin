@@ -45,13 +45,6 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
     public $notify_url;
 
     /**
-     * Enable for virtual products.
-     *
-     * @var bool
-     */
-    public $enable_for_virtual;
-
-    /**
      * Constructor for the gateway.
      */
     public function __construct()
@@ -67,7 +60,6 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
         $this->title = $this->get_option('title');
         $this->description = $this->get_option('description');
         $this->instructions = $this->get_option('instructions');
-        $this->enable_for_virtual = $this->get_option('enable_for_virtual', 'yes') === 'yes';
         $this->api_login = $this->get_option('api_login');
 
         // Actions.
@@ -95,7 +87,7 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
                 And the following PAYMEMNT METHODES only : <b>ORANGE MONEY</b>, <b>MTN MOBILE MONEY</b>, <b>PAYCARD</b>, <b>Visa & Master Card</b>,",
             'chap_chap_pay'
         ));
-        $this->order_button_text = __('Payez avec Chap Chap Pay', 'chap_chap_pay');
+        $this->order_button_text = __('Payez', 'chap_chap_pay');
         $this->has_fields = true;
         $this->notify_url = WC()->api_request_url('WC_Gateway_Chap_Chap_Pay');
         $this->supports = array(
@@ -110,42 +102,36 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
     {
         $this->form_fields = array(
             'enabled' => array(
-                'title' => __('Enable/Disable', 'chap_chap_pay'),
-                'label' => __('Enable Chap Chap Pay', 'chap_chap_pay'),
+                'title' => __('Activer/Desactiver', 'chap_chap_pay'),
+                'label' => __('Activer Chap Chap Pay', 'chap_chap_pay'),
                 'type' => 'checkbox',
-                'description' => __('Enable or Disable chap chap pay payement methode', 'chap_chap_pay'),
+                'description' => __('Activer ou Desactiver chap chap pay', 'chap_chap_pay'),
                 'default' => 'no',
             ),
             'title' => array(
                 'title' => __('Title', 'chap_chap_pay'),
                 'type' => 'safe_text',
-                'description' => __('Payment method description that the customer will see on your checkout.', 'chap_chap_pay'),
+                'description' => __('Le titre du moyen de paiement sur la page checkout.', 'chap_chap_pay'),
                 'default' => __('Chap Chap Pay', 'chap_chap_pay'),
                 'desc_tip' => true,
             ),
             'description' => array(
                 'title' => __('Description', 'chap_chap_pay'),
                 'type' => 'textarea',
-                'description' => __('Payment method description that the customer will see on your website.', 'chap_chap_pay'),
+                'description' => __('La description qui sera affiché sur la page checkout', 'chap_chap_pay'),
                 'default' => __('Payer facilement par Orange Money, MTN Mobile, PayCard, Visa/Master Card. <a href="https://www.paycard.co" target="_blank">En savoir plus</a>', 'chap_chap_pay'),
                 'desc_tip' => true,
             ),
             'instructions' => array(
-                'title' => __('Instructions', 'chap_chap_pay'),
+                'title' => __('Instructions sur la page de paiement', 'chap_chap_pay'),
                 'type' => 'textarea',
-                'description' => __('Instructions that will be added to the thank you page.', 'chap_chap_pay'),
+                'description' => __('Le message qui sera affiché sur la page de paiement', 'chap_chap_pay'),
                 'default' => __('Merci d\'avoir choisi Chap Chap Pay comme méthode de paiement.', 'chap_chap_pay'),
                 'desc_tip' => true,
             ),
-            'enable_for_virtual' => array(
-                'title' => __('Accept for virtual orders', 'chap_chap_pay'),
-                'label' => __('Accept chap_chap_pay if the order is virtual', 'chap_chap_pay'),
-                'type' => 'checkbox',
-                'default' => 'yes',
-            ),
             'api_login' => array(
                 'title' => __('Code E-Commerce', 'chap_chap_pay'),
-                'type' => 'password',
+                'type' => 'text',
                 'desc_tip' => __('Votre code E-Commerce est visible en vous connectant sur https://www.paycard.co', 'chap_chap_pay'),
             ),
         );
@@ -159,7 +145,7 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
             }
 
             if (get_option('woocommerce_force_ssl_checkout') == "no") {
-                echo "<div class=\"error\"><p>" . sprintf(__("<strong>%s</strong> is enabled and WooCommerce is not forcing the SSL certificate on your checkout page. Please ensure that you have a valid SSL certificate and that you are <a href=\"%s\">forcing the checkout pages to be secured.</a>"), $this->method_title, admin_url('admin.php?page=wc-settings&tab=checkout')) . "</p></div>";
+                echo "<div class=\"error\"><p>" . sprintf(__("<strong>%s</strong> est activé et WooCommerce ne force pas le certificat SSL sur votre page de paiement. Veuillez vous assurer d'avoir un certificat SSL valide et que vous <a href=\"%s\">forcez la sécurisation des pages de paiement.</a>"), $this->method_title, admin_url('admin.php?page=wc-settings&tab=checkout')) . "</p></div>";
             }
         }
     }
@@ -204,7 +190,8 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
          * V1
          * @var string
          */
-        $paycard_epay_url_v1 = "https://paycard.co/epay/";
+
+        // $paycard_epay_url_v1 = "https://paycard.co/epay/";
         $paycard_epay_url = "https://paycard.co/epay/create/";
 
         $get_payment_link_data = array(
@@ -311,7 +298,6 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
     public function check_response()
     {
         global $woocommerce;
-        var_dump($_REQUEST); die();
         $redirect_url = wc_get_checkout_url();
 
         if (empty($_REQUEST['transactionReference']) || empty($_REQUEST['montant']) || empty($_REQUEST['c'])) {
@@ -326,12 +312,19 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
 
             $order = wc_get_order($order_id);
 
-            if (!$order || !$order->has_status('pending')) {
-                wc_add_notice(__('La commande associée n\'existe pas ou n\'est pas en attente de paiement.', 'chap_chap_pay'), 'error');
-            } elseif ($eCommerceCode !== $this->api_login) {
-                $order->add_order_note(__("ERROR: Le code E-Commerce venant de Chap Chap Pay ne correspond pas au code E-Commerce configuré", 'woocommerce'));
-                wc_add_notice(__('Le code E-Commerce ne correspond pas.', 'chap_chap_pay'), 'error');
+            if (!$order) {
+                wc_add_notice(__('La commande associée n\'existe pas', 'chap_chap_pay'), 'error');
             } else {
+
+                if (!$order->has_status('pending')) {
+                    wc_add_notice(__('La commande associée n\'est pas en attente de paiement.', 'chap_chap_pay'), 'error');
+                }
+
+                if ($eCommerceCode !== $this->api_login) {
+                    $order->add_order_note(__("ERROR: Le code E-Commerce venant de Chap Chap Pay ne correspond pas au code E-Commerce configuré", 'woocommerce'));
+                    wc_add_notice(__('Le code E-Commerce ne correspond pas.', 'chap_chap_pay'), 'error');
+                }
+
                 $areAmountsSame = abs(($order->get_total() - floatval($transactionAmount)) / floatval($transactionAmount)) < 0.001;
 
                 if (!$areAmountsSame) {
@@ -353,7 +346,7 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
                     // Vider le panier
                     $woocommerce->cart->empty_cart();
 
-                    wc_add_notice(__('Le paiement a été effectué avec succès.', 'chap_chap_pay'), 'success');
+                    // wc_add_notice(__('Le paiement a été effectué avec succès.', 'chap_chap_pay'), 'success');
                     $redirect_url = $this->get_return_url($order);
                 }
             }
@@ -375,9 +368,9 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
             // Récupérer des informations supplémentaires si vous en avez
             $transaction_reference = get_post_meta($order_id, 'Chap Chap Pay Transaction Reference', true);
             $payment_method = get_post_meta($order_id, 'Chap Chap Pay Payment Method', true);
-            // $status = get_post_meta($order_id, 'Chap Chap Pay Payment Status', true);
-            $status = "success";
-            // $payment_method = "mtn_momos";
+            $status = get_post_meta($order_id, 'Chap Chap Pay Payment Status', true);
+            // $status = "success";
+            $payment_method = "cc";
 
             echo '<div class="custom-ccp-thankyou-content">'; // Ouvrir la balise div
 
@@ -386,20 +379,28 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
             } else {
                 echo '<h3 class="custom-ccp-thankyou-title">Merci d\'avoir choisi Chap Chap Pay comme méthode de paiement.</h3>';
             }
-
+            
+            echo '<div class="custom-ccp-thankyou-content-2">'; // Ouvrir la balise div 2
             echo '<div class="custom-ccp-block">'; // Ouvrir la balise div BLOCK
-            echo "<p class='cccp-custom-sutitle'>Satut de paiement: <span class='custom-thankyou-status-color'>" . $status . "</span></p>";
+            echo "<p class='cccp-custom-sutitle'>Satut de paiement:</p>";
+            echo "<p class='custom-thankyou-status-color'>" . $status . "</p>";
             echo '</div>'; // Fermer la balise div BLOCK
 
             if ($transaction_reference) {
                 echo '<div class="custom-ccp-block">'; // Ouvrir la balise div BLOCK
-                echo '<p class="cccp-custom-sutitle">Référence: <span class="custom-ccp-span-content">' . esc_html($transaction_reference) . '</span></p>';
+                echo '<p class="cccp-custom-sutitle">Référence: </p>';
+                echo '<p class="custom-ccp-span-content">' . esc_html($transaction_reference) . '</p>';
                 echo '</div>'; // Fermer la balise div BLOCK
             }
 
             if ($payment_method) {
                 echo '<div class="custom-ccp-block">'; // Ouvrir la balise div BLOCK
-                echo '<p class="cccp-custom-sutitle">Mode de paiement: <span class="custom-ccp-span-content">' . esc_html($payment_method) . '</span></p>';
+                echo '<p class="cccp-custom-sutitle">Mode de paiement: </p>';
+                echo '<p class="custom-ccp-span-content">' . esc_html($this->ccpay_payment_text($payment_method)) . '</p>';
+                echo '</div>'; // Fermer la balise div BLOCK
+                
+                echo '<div class="custom-ccp-block">'; // Ouvrir la balise div BLOCK
+                
                 // Display images based on payment method
                 $image_url = $this->ccpay_payment_icon($payment_method);
 
@@ -410,28 +411,34 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
 
             }
 
+            echo '</div>'; // Fermer la balise div 2
             echo '</div>'; // Fermer la balise div
 
             echo "<style>
                         .custom-ccp-thankyou-content {
                             background-color: #F3F4F6;
-                            padding: 20px;
                             margin-bottom: 20px;
-                            color: black;display: grid
-                            grid-template-columns: repeat(1, minmax(0, 1fr));
-                            gap: 0.5rem;
+                            color: black;
+                            display: block;
                             width: 100%;
+                            border-width: 1px; 
+                            border-color: #000000; 
                             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                        }
+
+                        .custom-ccp-thankyou-content-2 {
+                            display: flex;
+                            padding: 20px;
                         }
 
                         .custom-ccp-block {
                             display: block;
                             width: 100%;
                             padding: 0.5rem;
-                            margin: 0.5rem;
-                            border-bottom-width: 8px;
-                            border-color: #000000;
+                            border-left-width: 5px; 
+                            border-color: #000000; 
                             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                            justify-content: center; 
                         }
 
                         .custom-ccp-block:hover {
@@ -440,12 +447,22 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
                         }
 
                         .cccp-custom-sutitle {
-                            font-size: 1rem;
-                            line-height: 1.75rem;
+                            font-size: 0.75rem;
+                            line-height: 1rem; 
+                            color: #6B7280;
+                            text-transform: uppercase; 
+                            font-family: system-ui;
                         }
 
                         .custom-ccp-thankyou-title {
-
+                            background-color: #ffffff; 
+                            padding-top: 1.25rem;
+                            padding-bottom: 1.25rem;
+                            padding-left: 0.5rem;
+                            padding-right: 0.5rem; 
+                            border-width: 2px; 
+                            border-color: #374151;
+                            font-family: 'Times New Roman';
                         }
 
                         .custom-thankyou-status-color {
@@ -454,10 +471,11 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
                             padding-left: 1.25rem;
                             padding-right: 1.25rem;
                             margin: 1rem;
-                            width: auto;
+                            width: 8rem;
                             background-color: {$this->transaction_status_color($status)};
                             border-radius: 0.75rem;
                             color:#ffff;
+                            text-align: center; 
                         }
 
                         .custom-ccp-thankyou-content p {
@@ -468,6 +486,15 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
                         .custom-ccp-thankyou-content .custom-ccp-span-content {
                             font-weight: bold;
                             color: #0066cc;
+                            font-size: 0.875rem;
+                            line-height: 1.25rem;
+                            text-transform: uppercase;
+                            text-align: center; 
+
+                              @media (min-width: 640px) { 
+                                text-align: left; 
+                               }
+                              
                         }
                     </style>
             ";
@@ -492,7 +519,6 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
                 break;
             default:
                 $image_url = "logo.png";
-                // Add more cases for other payment methods as needed
         }
 
         return plugins_url('/assets/' . $image_url, __DIR__);
@@ -522,9 +548,31 @@ class WC_Gateway_Chap_Chap_Pay extends WC_Payment_Gateway
                 break;
             default:
                 $status_color = "#1E3A8A"; //text-blue-900
-                // Add more cases for other payment methods as needed
         }
 
         return $status_color;
+    }
+
+    private function ccpay_payment_text($payment_method)
+    {
+        $text = "";
+        switch ($payment_method) {
+            case 'paycard':
+                $text = "PAYCARD";
+                break;
+            case 'cc':
+                $text = "Carte de Credit";
+                break;
+            case 'orange_money':
+                $text = "Orange Money";
+                break;
+            case 'mtn_momo':
+                $text = "MTN Mobile Money";
+                break;
+            default:
+                $text = "----";
+        }
+
+        return $text;
     }
 }
